@@ -16,8 +16,8 @@ namespace CodingWiki_Web.Controllers
 
         public IActionResult Index()
         {
-            List<Book> objList = _db.Books.Include(u=>u.Publisher)
-                .Include(u=>u.BookAuthorMap).ThenInclude(u=>u.Author).ToList();
+            List<Book> objList = _db.Books.Include(u => u.Publisher)
+                .Include(u => u.BookAuthorMap).ThenInclude(u => u.Author).ToList();
             //List<Book> objList = _db.Books.ToList();
             //foreach(var obj in objList)
             //{
@@ -40,10 +40,10 @@ namespace CodingWiki_Web.Controllers
         {
             BookVM obj = new();
 
-            obj.PublisherList = _db.Publishers.Select(i=> new SelectListItem
+            obj.PublisherList = _db.Publishers.Select(i => new SelectListItem
             {
-               Text = i.Name,
-               Value=i.Publisher_Id.ToString()
+                Text = i.Name,
+                Value = i.Publisher_Id.ToString()
             });
 
             if (id == null || id == 0)
@@ -64,18 +64,18 @@ namespace CodingWiki_Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upsert(BookVM obj)
         {
-                if (obj.Book.BookId == 0)
-                {
-                    //create
-                    await _db.Books.AddAsync(obj.Book);
-                }
-                else
-                {
+            if (obj.Book.BookId == 0)
+            {
+                //create
+                await _db.Books.AddAsync(obj.Book);
+            }
+            else
+            {
                 //update
                 _db.Books.Update(obj.Book);
             }
-                await _db.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Details(int? id)
@@ -85,10 +85,15 @@ namespace CodingWiki_Web.Controllers
                 return NotFound();
             }
             BookDetail obj = new();
-            
+
             //edit
-           
-            obj = _db.BookDetails.Include(u=>u.Book).FirstOrDefault(u=>u.Book_Id==id);
+
+            obj = _db.BookDetails.Include(u => u.Book).FirstOrDefault(u => u.Book_Id == id) ??
+                new()
+                {
+                    Book = _context.Books.Find(id),
+                    Book_Id = (int)id
+                };
             if (obj == null)
             {
                 return NotFound();
@@ -100,7 +105,7 @@ namespace CodingWiki_Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Details(BookDetail obj)
         {
-            if (obj.BookDetail_Id==0)
+            if (obj.BookDetail_Id == 0)
             {
                 //create
                 await _db.BookDetails.AddAsync(obj);
@@ -161,7 +166,7 @@ namespace CodingWiki_Web.Controllers
         [HttpPost]
         public IActionResult ManageAuthors(BookAuthorVM bookAuthorVM)
         {
-            if(bookAuthorVM.BookAuthor.Book_Id != 0 && bookAuthorVM.BookAuthor.Author_Id != 0)
+            if (bookAuthorVM.BookAuthor.Book_Id != 0 && bookAuthorVM.BookAuthor.Author_Id != 0)
             {
                 _db.BookAuthorMaps.Add(bookAuthorVM.BookAuthor);
                 _db.SaveChanges();
@@ -170,7 +175,7 @@ namespace CodingWiki_Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult RemoveAuthors(int authorId,BookAuthorVM bookAuthorVM)
+        public IActionResult RemoveAuthors(int authorId, BookAuthorVM bookAuthorVM)
         {
             int bookId = bookAuthorVM.Book.BookId;
             BookAuthorMap bookAuthorMap = _db.BookAuthorMaps.FirstOrDefault(
